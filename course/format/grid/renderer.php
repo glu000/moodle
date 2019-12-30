@@ -870,7 +870,7 @@ class format_grid_renderer extends format_section_renderer_base {
                     if (!empty($thissection)) {
                         foreach ($thissection->modinfo->cms as $modnumber) {
                             //$mod = $sections->cms[$modnumber];
-                            $xy = New section_info();
+                            //$xy = New section_info();
 
                             if ($modnumber->is_visible_on_course_page() && ($modnumber->section == $thissection->id))
                             {
