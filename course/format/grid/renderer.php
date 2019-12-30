@@ -867,9 +867,9 @@ class format_grid_renderer extends format_section_renderer_base {
                     }
 
                     //XXXXXXXXXXXXXXX START
-                    if (!empty($modinfo->sections[$section])) {
-                        foreach ($modinfo->sections[$section] as $modnumber) {
-                            $mod = $modinfo->cms[$modnumber];
+                    if (!empty($sections->sections[$section])) {
+                        foreach ($sections->sections[$section] as $modnumber) {
+                            $mod = $sections->cms[$modnumber];
 
                             if ($mod->is_visible_on_course_page())
                             {
