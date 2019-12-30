@@ -933,7 +933,7 @@ class format_grid_renderer extends format_section_renderer_base {
 
                     // XXXXXXXXXXXXXXXXXXXXX Hier Abfrage auf Sprache und dann anderes Bild einbinden
                     if ($_SESSION ['SESSION']->lang == "de") {
-                        $out = $this->courseformat->output_section_image($section, $sectionname, $sectionimage, $contextid, $thissection, $gridimagepath);
+                        $out = $this->courseformat->output_section_image($section, $sectionname, $sectionimage, $contextid, $thissection, $gridimagepath, $this->output, $iswebp);
                     }
                     else
                     {   // /Users/gl/OneDrive - Coverdale Managementberatungs und -trainings GmbH/GLC/Projekte/IT/moodledata/repository/cmbt/cmbt/files/Coverschilder/en
@@ -957,7 +957,7 @@ class format_grid_renderer extends format_section_renderer_base {
                         }
                         else
                         {
-                            $out = $this->courseformat->output_section_image($section, $sectionname, $sectionimage, $contextid, $thissection, $gridimagepath);
+                            $out = $this->courseformat->output_section_image($section, $sectionname, $sectionimage, $contextid, $thissection, $gridimagepath, $this->output, $iswebp);
                         }
                     }
                     echo $out;
