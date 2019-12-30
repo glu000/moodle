@@ -514,18 +514,19 @@ class format_grid_renderer extends format_section_renderer_base {
         }
 
         if ($shownsections) {
-            // Initialise the shade box functionality:...
-            $PAGE->requires->js_init_call('M.format_grid.init', array(
-                $PAGE->user_is_editing(),
-                $sectionredirect,
-                count($this->shadeboxshownarray),
-                $this->initialsection,
-                json_encode($this->shadeboxshownarray)));
-            if (!$PAGE->user_is_editing()) {
-                // Initialise the key control functionality...
-                $PAGE->requires->yui_module('moodle-format_grid-gridkeys', 'M.format_grid.gridkeys.init',
-                    array(array('rtl' => $rtl)), null, true);
-            }
+            // XXXXXXXX
+            if ($PAGE->user_is_editing())
+                $PAGE->requires->js_init_call('M.format_grid.init', array(
+                    $PAGE->user_is_editing(),
+                    $sectionredirect,
+                    $coursenumsections,
+                    json_encode($this->shadeboxshownarray)));
+                if (!$PAGE->user_is_editing()) {
+                    // Initialise the key control functionality...
+                    $PAGE->requires->yui_module('moodle-format_grid-gridkeys', 'M.format_grid.gridkeys.init',
+                        array(array('rtl' => $rtl)), null, true);
+                }
+
         }
     }
 
@@ -865,12 +866,43 @@ class format_grid_renderer extends format_section_renderer_base {
                         $this->make_block_icon_topic0_editing($course);
                     }
 
+                    //XXXXXXXXXXXXXXX START
+                    if (!empty($modinfo->sections[$section])) {
+                        foreach ($modinfo->sections[$section] as $modnumber) {
+                            $mod = $modinfo->cms[$modnumber];
+
+                            if ($mod->is_visible_on_course_page())
+                            {
+                                $cmname = $this->courserenderer->course_section_cm_name($mod/*, $displayoptions*/);
+                            }
+                            //       if ($ismoving and $mod->id == $USER->activitycopy) {
+                            // do not display moving mod
+                            //           continue;
+                            //       }
+                            // TODO: Muss ich da noch was machen wegen is_moving???
+                        }
+                    }
+
+                    $newstr = strstr ($cmname, 'href="');
+                    $newstr = substr ($newstr,6);
+                    $pos = strpos ($newstr, '"');
+                    $newstr = substr ($newstr, 0, $pos);
+
                     echo html_writer::start_tag('a', array(
+                        //      'href' => '#section-'.$thissection->section,
+                        'href' => $newstr,
+                        'id' => 'gridsection-'.$thissection->section,
+                        'class' => 'gridicon_link',
+                        'role' => 'link'));
+
+                    //XXXXXXXXXXXXXXXXXXXX Ende
+
+                    /*echo html_writer::start_tag('a', array(
                         'href' => '#section-'.$thissection->section,
                         'id' => 'gridsection-'.$thissection->section,
                         'class' => 'gridicon_link',
                         'role' => 'link')
-                    );
+                    );*/
 
                     if ($this->settings['sectiontitleboxposition'] == 2) {
                         echo html_writer::tag('div', $displaysectionname, $sectiontitleattribues);
@@ -899,8 +931,39 @@ class format_grid_renderer extends format_section_renderer_base {
                             'hidden' => true, 'aria-label' => $summary));
                     }
 
-                    echo $this->courseformat->output_section_image(
-                        $section, $sectionname, $sectionimage, $contextid, $thissection, $gridimagepath, $this->output, $iswebp);
+                    // XXXXXXXXXXXXXXXXXXXXX Hier Abfrage auf Sprache und dann anderes Bild einbinden
+                    if ($_SESSION ['SESSION']->lang == "de") {
+                        $out = $this->output_section_image($section, $sectionname, $sectionimage, $contextid, $thissection, $gridimagepath);
+                    }
+                    else
+                    {   // /Users/gl/OneDrive - Coverdale Managementberatungs und -trainings GmbH/GLC/Projekte/IT/moodledata/repository/cmbt/cmbt/files/Coverschilder/en
+                        $dir = $CFG->dataroot . '/repository/cmbt/cmbt/files/Coverschilder/' . $_SESSION ['SESSION']->lang . '/';
+                        $tempdir = $_SERVER['DOCUMENT_ROOT'] . '/temp/';
+
+                        $defile = str_replace('goi_', '', $sectionimage->image);
+                        $filename = $_SESSION ['SESSION']->lang . "_" . $defile;
+
+                        $tempfile = $tempdir . $filename;
+                        $fileurl = $CFG->wwwroot . '/temp/' . $filename;
+                        $filename = $dir . $filename;
+
+                        if (file_exists($filename))
+                        {
+                            if (!file_exists ($tempfile))
+                            {
+                                copy ($filename, $tempfile);
+                            }
+                            $out = '<img src="' . $fileurl . '" heigth="256" width ="256" alt="' . $sectionname . '" role="img" aria-label="' . $sectionname . '" />';
+                        }
+                        else
+                        {
+                            $out = $this->output_section_image($section, $sectionname, $sectionimage, $contextid, $thissection, $gridimagepath);
+                        }
+                    }
+                    echo $out;
+
+                    //echo $this->courseformat->output_section_image(
+                    //    $section, $sectionname, $sectionimage, $contextid, $thissection, $gridimagepath, $this->output, $iswebp);
 
                     echo html_writer::end_tag('div');
                     echo html_writer::end_tag('a');
