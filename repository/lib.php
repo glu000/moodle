@@ -1920,7 +1920,7 @@ abstract class repository implements cacheable_object {
      * @return int
      */
     public function default_returntype() {
-        return FILE_INTERNAL;
+        return FILE_REFERENCE;//FILE_INTERNAL;
     }
 
     /**
