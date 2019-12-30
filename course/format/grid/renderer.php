@@ -869,11 +869,11 @@ class format_grid_renderer extends format_section_renderer_base {
                     //XXXXXXXXXXXXXXX START
                     if (!empty($sections[$section])) {
                         foreach ($sections[$section]->modinfo->cms as $modnumber) {
-                            $mod = $sections->cms[$modnumber];
+                            //$mod = $sections->cms[$modnumber];
 
-                            if ($mod->is_visible_on_course_page())
+                            if ($modnumber->is_visible_on_course_page())
                             {
-                                $cmname = $this->courserenderer->course_section_cm_name($mod/*, $displayoptions*/);
+                                $cmname = $this->courserenderer->course_section_cm_name($modnumber/*, $displayoptions*/);
                             }
                             //       if ($ismoving and $mod->id == $USER->activitycopy) {
                             // do not display moving mod
