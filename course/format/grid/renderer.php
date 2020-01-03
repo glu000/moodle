@@ -519,7 +519,8 @@ class format_grid_renderer extends format_section_renderer_base {
                 $PAGE->requires->js_init_call('M.format_grid.init', array(
                     $PAGE->user_is_editing(),
                     $sectionredirect,
-                    $coursenumsections,
+                    count($this->shadeboxshownarray),
+                    $this->initialsection,
                     json_encode($this->shadeboxshownarray)));
                 if (!$PAGE->user_is_editing()) {
                     // Initialise the key control functionality...
