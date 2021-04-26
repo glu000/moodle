@@ -365,6 +365,10 @@ define('PAGE_COURSE_VIEW', 'course-view');
 define('GETREMOTEADDR_SKIP_HTTP_CLIENT_IP', '1');
 /** Get remote addr constant */
 define('GETREMOTEADDR_SKIP_HTTP_X_FORWARDED_FOR', '2');
+/**
+ * GETREMOTEADDR_SKIP_DEFAULT defines the default behavior remote IP address validation.
+ */
+define('GETREMOTEADDR_SKIP_DEFAULT', GETREMOTEADDR_SKIP_HTTP_X_FORWARDED_FOR|GETREMOTEADDR_SKIP_HTTP_CLIENT_IP);
 
 // Blog access level constant declaration.
 define ('BLOG_USER_LEVEL', 1);
@@ -5208,6 +5212,9 @@ function remove_course_contents($courseid, $showfeedback = true, array $options 
         echo $OUTPUT->notification($strdeleted.get_string('type_block_plural', 'plugin'), 'notifysuccess');
     }
 
+    $DB->set_field('course_modules', 'deletioninprogress', '1', ['course' => $courseid]);
+    rebuild_course_cache($courseid, true);
+
     // Get the list of all modules that are properly installed.
     $allmodules = $DB->get_records_menu('modules', array(), '', 'name, id');
 
@@ -5249,7 +5256,9 @@ function remove_course_contents($courseid, $showfeedback = true, array $options 
                     if ($cm->id) {
                         // Delete cm and its context - orphaned contexts are purged in cron in case of any race condition.
                         context_helper::delete_instance(CONTEXT_MODULE, $cm->id);
+                        $DB->delete_records('course_modules_completion', ['coursemoduleid' => $cm->id]);
                         $DB->delete_records('course_modules', array('id' => $cm->id));
+                        rebuild_course_cache($cm->course, true);
                     }
                 }
             }
@@ -5269,9 +5278,8 @@ function remove_course_contents($courseid, $showfeedback = true, array $options 
     // Remove all data from availability and completion tables that is associated
     // with course-modules belonging to this course. Note this is done even if the
     // features are not enabled now, in case they were enabled previously.
-    $DB->delete_records_select('course_modules_completion',
-           'coursemoduleid IN (SELECT id from {course_modules} WHERE course=?)',
-           array($courseid));
+    $DB->delete_records_subquery('course_modules_completion', 'coursemoduleid', 'id',
+            'SELECT id from {course_modules} WHERE course = ?', [$courseid]);
 
     // Remove course-module data that has not been removed in modules' _delete_instance callbacks.
     $cms = $DB->get_records('course_modules', array('course' => $course->id));
@@ -5286,6 +5294,7 @@ function remove_course_contents($courseid, $showfeedback = true, array $options 
         }
         context_helper::delete_instance(CONTEXT_MODULE, $cm->id);
         $DB->delete_records('course_modules', array('id' => $cm->id));
+        rebuild_course_cache($cm->course, true);
     }
 
     if ($showfeedback) {
@@ -5305,11 +5314,14 @@ function remove_course_contents($courseid, $showfeedback = true, array $options 
     }
     unset($childcontexts);
 
-    // Remove all roles and enrolments by default.
+    // Remove roles and enrolments by default.
     if (empty($options['keep_roles_and_enrolments'])) {
         // This hack is used in restore when deleting contents of existing course.
+        // During restore, we should remove only enrolment related data that the user performing the restore has a
+        // permission to remove.
+        $userid = $options['userid'] ?? null;
+        enrol_course_delete($course, $userid);
         role_unassign_all(array('contextid' => $coursecontext->id, 'component' => ''), true);
-        enrol_course_delete($course);
         if ($showfeedback) {
             echo $OUTPUT->notification($strdeleted.get_string('type_enrol_plural', 'plugin'), 'notifysuccess');
         }
@@ -9194,7 +9206,7 @@ function getremoteaddr($default='0.0.0.0') {
     if (empty($CFG->getremoteaddrconf)) {
         // This will happen, for example, before just after the upgrade, as the
         // user is redirected to the admin screen.
-        $variablestoskip = 0;
+        $variablestoskip = GETREMOTEADDR_SKIP_DEFAULT;
     } else {
         $variablestoskip = $CFG->getremoteaddrconf;
     }
